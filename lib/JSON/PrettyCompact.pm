@@ -131,13 +131,14 @@ sub _encode_hash_width {
 }
 
 sub _encode_width {
-    return $_[0]->{_variable_encoder}->encode( $_[1] ) if not ref $_[1];
-    my $test_encoding = $_[0]->{_encoder}->encode( $_[1] );
-    return $test_encoding if $_[2] >= length $test_encoding;
-    return $_[0]->_encode_hash_width( $_[1], $_[2] )
-      if 'HASH' eq ref $_[1];
-    return $_[0]->_encode_array_width( $_[1], $_[2] )
-      if 'ARRAY' eq ref $_[1];
-    die "Can't encode ref type " . ref $_[1];
+    my ( $self, $value, $width ) = @_;
+    return $self->{_variable_encoder}->encode($value) if not ref $value;
+    my $test_encoding = $self->{_encoder}->encode($value);
+    return $test_encoding if $width >= length $test_encoding;
+    return $self->_encode_hash_width( $value, $width )
+      if 'HASH' eq ref $value;
+    return $self->_encode_array_width( $value, $width )
+      if 'ARRAY' eq ref $value;
+    die "Can't encode ref type " . ref $value;
 }
 1;
