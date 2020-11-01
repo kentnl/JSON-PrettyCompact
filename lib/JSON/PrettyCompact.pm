@@ -52,7 +52,7 @@ sub clone {
         next if $_ =~ /^_/;
         $config{$_} = exists $params{$_} ? $params{$_} : $old->{$_};
     }
-    ( ref $self )->new( \%config );
+    ( ref $old )->new( \%config );
 }
 sub encode { $_[0]->_encode_width( $_[1], $_[0]->{width} ) }
 
