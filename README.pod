@@ -293,6 +293,15 @@ Just be aware that C<clone> has no way to clone the internal
 encoders, and will create them fresh from the final parameters from
 combining "old" settings and the passed ones.
 
+=head1 ENCODING
+
+Presently this module doesn't provide any explict knobs for handling
+encoding, though if I'm bored enough I may eventually.
+
+Subsequently, its return value is a character string, and you'll
+probably want slosh it through an encoder like C<utf8::encode>
+before you pass it off to C<print>.
+
 =head1 CAVEATS
 
 This can in no way be used I<everywhere> standard C<JSON> tools are
