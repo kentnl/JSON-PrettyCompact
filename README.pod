@@ -16,7 +16,9 @@ JSON-PrettyCompact - More Compact, But still Pretty, JSON
 This library produces a very rudimentary wrapper around the standard
 JSON modules to pack more characters into a visible area, with
 minimial line overflows, opting to find a sweet spot between the
-standards of C<pretty(0)> and C<pretty(1)> typically made available.
+standards of C<pretty(0)> and C<pretty(1)> typically made available,
+while I<still> being I<valid> C<JSON>, and thus still being machine
+readable, while also being easy to edit.
 
 C<pretty(0)> is usually far too compact to read, as the lines spew
 on forever horizontally, and its unlikely whatever you read that in
