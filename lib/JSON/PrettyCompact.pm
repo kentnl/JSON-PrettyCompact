@@ -46,7 +46,7 @@ sub new {
 # lost.
 sub clone {
     my ( $old, @args ) = @_;
-    my (%params) = ref $args[1] ? %{ $args[1] } : @args;
+    my (%params) = ref $args[0] ? %{ $args[0] } : @args;
     my (%config);
     for ( keys %{$old} ) {
         next if $_ =~ /^_/;
