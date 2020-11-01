@@ -1,0 +1,10 @@
+#!perl
+use JSON::PrettyCompact;
+use JSON::MaybeXS;
+
+print JSON::PrettyCompact->new->encode(
+  JSON::MaybeXS::new->decode(do {
+    local $/;
+    scalar <>;
+  })
+);
