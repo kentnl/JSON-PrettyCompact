@@ -90,28 +90,29 @@ sub _encode_array_width {
 }
 
 sub _encode_hash_width {
-    my (@keys) = $_[0]->{canonical} ? sort keys %{ $_[1] } : keys %{ $_[1] };
+    my ( $self, $width, %pairs ) = ( $_[0], $_[2], %{ $_[1] } );
+    my (@keys) = $self->{canonical} ? sort keys %pairs : keys %pairs;
     return "{}" unless @keys;
 
-    my $inline_comma = ( $_[0]->{space_after} ? q[, ] : q[,] );
+    my $inline_comma = ( $self->{space_after} ? q[, ] : q[,] );
     my $comma_size   = length $inline_comma;
 
     my (@entries);
     for my $key (@keys) {
-        my $label = $_[0]->{_variable_encoder}->encode($key);
-        $label .= " " if $_[0]->{space_before};
+        my $label = $self->{_variable_encoder}->encode($key);
+        $label .= " " if $self->{space_before};
         $label .= ":";
-        $label .= " " if $_[0]->{space_after};
+        $label .= " " if $self->{space_after};
 
         my $space =
-            $_[0]->{width_is_local}
-          ? $_[0]->{width}
-          : $_[2] - length($label) - $_[0]->{indent};
-        my $entry = $label . $_[0]->_encode_width( $_[1]->{$key}, $space );
+            $self->{width_is_local}
+          ? $self->{width}
+          : $width - length($label) - $self->{indent};
+        my $entry = $label . $self->_encode_width( $pairs{$key}, $space );
         $entry =~ s/\s*\Z//ms;
 
         if (    @entries
-            and $_[0]->{fold_hashes}
+            and $self->{fold_hashes}
             and $entries[-1] !~ /\n/
             and $entry !~ /\n/
             and $space >=
@@ -124,7 +125,7 @@ sub _encode_hash_width {
 
         # apply indent
         push @entries, join "\n",
-          map { " " x $_[0]->{indent} . $_ } split /\n/, $entry;
+          map { " " x $self->{indent} . $_ } split /\n/, $entry;
     }
     return "{\n" . ( join qq[,\n], @entries ) . "\n}";
 }
