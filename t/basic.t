@@ -6,7 +6,8 @@ use Test::More;
 use JSON::PrettyCompact;
 use JSON::MaybeXS;
 
-my $jxs = JSON::MaybeXS->new()->canonical(1);
+my $base = JSON::PrettyCompact->new( width_is_local => 1 );
+my $jxs  = JSON::MaybeXS->new()->canonical(1);
 
 my (@ds) = (
     {},
@@ -48,9 +49,7 @@ my (@ds) = (
 );
 
 for my $width ( 5, 10, 20, 30, 40, 50, 60, 70 ) {
-    my $instance =
-      JSON::PrettyCompact->new( width => $width, width_is_local => 1 );
-
+    my $instance = $base->clone( width => $width );
     for my $test_no ( 0 .. $#ds ) {
         my $encoded      = $instance->encode( $ds[$test_no] );
         my $pure_encoded = $jxs->encode( $ds[$test_no] );
