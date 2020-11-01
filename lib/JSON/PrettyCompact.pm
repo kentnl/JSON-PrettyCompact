@@ -140,3 +140,336 @@ sub _encode_width {
     die "Can't encode ref type " . ref $_[1];
 }
 1;
+
+__END__
+
+=pod
+
+=encoding UTF-8
+
+=head1 NAME
+
+JSON-PrettyCompact - More Compact, But still Pretty, JSON
+
+=head1 SYNOPSIS
+
+  use JSON::PrettyCompact;
+  print JSON::PrettyCompact->new->encode( { ... } );
+
+=head1 DESCRIPTION
+
+This library produces a very rudimentary wrapper around the standard
+JSON modules to pack more characters into a visible area, with
+minimial line overflows, opting to find a sweet spot between the
+standards of C<pretty(0)> and C<pretty(1)> typically made available.
+
+C<pretty(0)> is usually far too compact to read, as the lines spew
+on forever horizontally, and its unlikely whatever you read that in
+will soft-wrap it in ways amenable to reading.
+
+C<pretty(1)> is usually far too verbose to read, with simple
+key-value maps and arrays consuming a line per element, spewing out
+vertically and giving your scrollbar a workout.
+
+Instead, this module factors for a given amount of horizontal space
+that is considered "ideal" for easy consumption, and tries to split
+units elegantly that exceed this given space, resulting in sequences
+of inherently small units being clustered linewise.
+
+Its clearly not a perfect implementation, and there are places where
+it could possibly be even more compact, but its too complicated.
+
+But the results speak for themselves
+
+Try flow this code into either C<pretty(0)> or C<pretty(1)> JSON
+formatting and see how much more painful it is to decipher in both:
+
+  {
+    "a": 1, "b": {"c": 1}, "d": [1], "e": [1, 2], "f": [1, 2, 3],
+    "g": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], "h": [{"a": 1}],
+    "i": [{"a": 1}, {"a": 1}],
+    "j": [
+      {"a": 1}, {"a": 1}, {"a": 1}, {"a": 1}, {"a": 1},
+      {"b": {"c": {"d": {"e": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]}}}},
+      {"f": 1}, {"f": 1}, {"f": 1}, {"f": 1}, {"f": 1}
+    ],
+    "k": {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6}
+  }
+
+And yet, this is our default presentation.
+
+=head1 METHODS
+
+=head2 new
+
+  JSON::PrettyCompact->new( %params );
+
+Create an encoder for pretty compact output.
+
+=head3 DEFAULTS
+
+  canonical      =>  1 # people typically want this
+  indent         =>  2 # A compact, but still readable amount of indent
+  space_after    =>  1 # This really helps with reading
+  space_before   =>  0 # This ain't too helpful
+  width          => 69 # A nice default for terminals and text files
+  width_is_local =>  1 # Reduced vertical spewing
+  fold_hashes    =>  1 # Useful 60% of the time
+  fold_arrays    =>  1 # Useful 90% of the time
+
+=head3 PARAMETERS
+
+=head4 canonical
+
+When processing Hashes, ensure to emit in sorted key order.
+
+B<This parameter is also passed to the internal JSON encoder>,
+as if you want consistent results, you typically want it everywhere.
+
+This is B<enabled> by default, as the primary audience is human
+beings, and they don't like things randomly changing.
+
+=head4 indent
+
+When determining that a structure must be split over multiple lines,
+use this many spaces of indent.
+
+This defaults to B<2>, which gives a very compact result, while
+still being relatively easy to read.
+
+In conjunction with C<width_is_local=0>, each indent level loses
+this many additional characters of space, and subsequently tips the
+hand in favour of more lines of output.
+
+=head4 space_after
+
+Controls whether or not to insert a space after both ":" and "," in
+C<JSON> delimiters.
+
+B<This parameter is also passed to the internal JSON encoder>, as it
+makes for a more consistent read.
+
+This is B<enabled> by default, as it seems to improve legibility
+with minimal consequences to overall compaction
+
+=head4 space_before
+
+Controls whether or not to insert a space before ":" C<JSON>
+delimiters.
+
+B<This parameter is also passed to the internal JSON encoder>, again
+for consistent formatting.
+
+This is B<disabled> by default, as it doesn't seem to really improve
+overall legibility.
+
+=head4 width
+
+Controls how many characters any given data structure is allowed to
+consume, before crying that I<Thats too many characters>, and
+splitting the data structure across multiple vertical lines.
+
+Ideally, this should be a moderately large number, as smaller
+numbers basically regress this entire module back to C<pretty(1)>
+output, but with all the heavy lifting done by this module instead
+of letting the C<JSON> backend do it, which, well, don't do that.
+
+When used in conjunction with C<width_is_local=0>, cumulative
+indentation is factored into the overall space consumption,
+increasing the chances that a deeply nested, but small, element may
+be needlessly split across many lines.
+
+This is B<NOT> a I<HARD> limit, as there's not much that can be done
+once you run out of places to stuff a C<\n>, and you reach C<width>
+characters of indentation, you're still going to need to put records
+somewhere.
+
+But if your objective is to try to fit inside a terminal or editor
+window without horizontal scrolling, as opposed to just general
+I<visual> horizontal space minimization, you'll want this value to
+reflect that.
+
+When C<width_is_local=1>, much smaller values of C<width> are
+viable.
+
+But in general, you don't want rediculously small values of
+C<width>, say, smaller than 10, or you'll just be wasting your time.
+
+The B<default> value of C<width> is B<69> as this gives nice results
+in either condition.
+
+=head4 width_is_local
+
+This controls whether the space allocation declared by C<width> is
+local to the unit, or if the C<width> should be a I<global> goal for
+a wrap limit, preferring to snap even shorter elements across
+multiple lines when the indentation pushes them up against the
+C<width>.
+
+C<width_is_local=0> is best used in conjunction with B<large> values
+of C<width>, or it will regress this entire module back to
+C<pretty(1)>-like behaviour.
+
+C<width_is_local=1> is more flexible, and only aims to keep each
+unit horizontally small, while not caring too much if the unit is
+300 columns deep, and works well with both I<large> and I<small>
+values
+
+The B<default> is C<width_is_local=1>, as this seems to have much
+less surprising formatting.
+
+=head4 fold_hashes
+
+This controls how aggressively the internal multi-line splitter for
+hashes tries to pack mutiple small sub-units into a single line.
+
+For instance, if a hash has 100 elements, and you're only getting a
+width of 30, with C<fold_hashes=0>, each key will get its own line,
+regardless of the fact it may only have a value 1 character wide,
+leaving a lot of unused horizontal space on its right.
+
+With C<fold_hashes=1>, several C<key: value> pairs can be squashed
+into a single line of output, greatly reducing vertical space
+consumption.
+
+This is really useful when you have a lot of data structures with
+mostly consistent key lengths, and mostly consistent value lengths.
+
+However, with wildly varying key/value lengths, this can be harmful,
+as it becomes prone to having hash printouts where it is I<mostly>
+one line per result, and occasional lines with trailing second
+entries, and these can be overlooked.
+
+For example:
+
+  "prereqs": {
+    "build": {"requires": {"List::Util": "0", "Test::More": "0"}},
+    "configure": {"requires": {"Module::Build": 0.36}},
+    "runtime": {
+      "requires": {
+        "Text::Aligner": "0.05", "perl": "5.008", "strict": "0",
+        "warnings": "0"
+      }
+    }
+  },
+
+This is not the worst example, but you can imagine how it might be
+bad if your data was:
+
+  {
+    ...
+    "romestupidlylongkeynamehereomgedfghedfekyepryue": 4,
+    "somestupidlylongkeynamehereomgwtfbbq": 5, "tome": 6,
+    "tomestupidlylongkeynamehereomgwtfbbqaegttyyh767": 7,
+    ...
+  }
+
+You could easily miss that.
+
+But as I've found it on balance I<mostly> useful, the B<default>
+is C<fold_hashes=1>.
+
+=head4 fold_arrays
+
+Similar to C<fold_hashes>, this tries to compact more units inside
+each line of a multi-line array when the array is deemed to need
+prettifying to fit within the C<width> goals.
+
+And similar to C<fold_hashes>, there are caveats that come in some
+cases when arrays are filled with wildy varying element lengths.
+
+However, in general arrays seem to be more self-consistent, and
+arrays of numerical data benefit greatly from this option, and
+yeilding nice results like:
+
+  [
+    1, 2, 3, 4, 5,
+    6, 7, 8, 9, 10
+  ]
+
+In situations that would have otherwise degraded to
+
+  [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ]
+
+Subsequently, by B<default>, C<fold_arrays=1>.
+
+=head2 encode
+
+  my $string = $insance->encode($data);
+
+This is the only method you're really interested in, it formats
+C<$data> as best it can as per parameters passed to C<new>.
+
+=head2 clone
+
+  my $copy = $instance->clone(%changed_params);
+
+This is a simple adapter to create a new C<JSON::PrettyCompact>
+instance, re-using the settings from an existing one, in order
+to change a parameter or two.
+
+It is very unsophisticated and you could do the same thing by
+keeping your original parameters hash around, modifying them, and
+then calling C<new> with them.
+
+Though I guess this is also useful if you're a bad person and modify
+internal state directly.
+
+Just be aware that C<clone> has no way to clone the internal
+encoders, and will create them fresh from the final parameters from
+combining "old" settings and the passed ones.
+
+=head1 CAVEATS
+
+This can in no way be used I<everywhere> standard C<JSON> tools are
+used.
+
+Particularly, I<heaps> of the features are unsupported. And any
+exotic data types outside simple scalars, hashes and arrays have no
+support implemented.
+
+If you're lucky, and those exist, they might be able to fit within
+a C<width> limit and not break anything. Other times you might just
+get a big fat C<die>.
+
+Also, C<allow_nonref> behaviour permitting C<encode($scalar)> is
+functionally hard enabled.
+
+The output format is also really not intended for general purpose
+serialization, and has limitations with regards to anything
+line-based, like C<diff>, in the same ways compact representation
+can be a bit of a nightmare if you hit it in a git rebase.
+
+Its slightly I<less> bad than pure compact representation in this
+regard, because there's still a chance a change will only affect one
+line, instead of changing the one line that comprises the whole
+file, but you'll also get confused when a structure length changes
+somewhere and an entire subtree gets folded/unfolded, or folded
+subsections get reflowed due to being able to suddenly fit fewer or
+more elements.
+
+I<Reasonable> patches welcome, I guess.
+
+=head1 AUTHOR
+
+Kent Fredric <kentnl@cpan.org>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2020 by Kent Fredric <kentfredric@gmail.com>.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
+=cut
