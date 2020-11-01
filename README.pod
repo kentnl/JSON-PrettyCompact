@@ -20,6 +20,12 @@ standards of C<pretty(0)> and C<pretty(1)> typically made available,
 while I<still> being I<valid> C<JSON>, and thus still being machine
 readable, while also being easy to edit.
 
+Specifically, the motivation was to have a simple human-modifiable,
+machine-readable format, that I could still run a "tidy this up"
+command after editing it, which more portable than simply doing the
+same thing with a C<.pl> file, kept tidy with C<perltidy>, and
+consumed with C<do>.
+
 C<pretty(0)> is usually far too compact to read, as the lines spew
 on forever horizontally, and its unlikely whatever you read that in
 will soft-wrap it in ways amenable to reading.
