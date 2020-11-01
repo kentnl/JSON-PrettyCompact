@@ -57,21 +57,21 @@ sub clone {
 sub encode { $_[0]->_encode_width( $_[1], $_[0]->{width} ) }
 
 sub _encode_array_width {
-    my (@values) = @{ $_[1] };
+    my ( $self, $width, @values ) = ( $_[0], $_[2], @{ $_[1] } );
     return "[]" unless @values;
 
     my $space =
-      $_[0]->{width_is_local} ? $_[0]->{width} : $_[2] - $_[0]->{indent};
-    my $inline_comma = ( $_[0]->{space_after} ? q[, ] : q[,] );
+      $self->{width_is_local} ? $self->{width} : $width - $self->{indent};
+    my $inline_comma = ( $self->{space_after} ? q[, ] : q[,] );
     my $comma_size   = length $inline_comma;
 
     my (@entries);
     for my $value (@values) {
-        my $entry = $_[0]->_encode_width( $value, $space );
+        my $entry = $self->_encode_width( $value, $space );
         $entry =~ s/\s*\Z//ms;
 
         if (    @entries
-            and $_[0]->{fold_arrays}
+            and $self->{fold_arrays}
             and $entries[-1] !~ /\n/
             and $entry !~ /\n/
             and $space >=
@@ -84,7 +84,7 @@ sub _encode_array_width {
 
         # apply indent
         push @entries, join "\n",
-          map { " " x $_[0]->{indent} . $_ } split /\n/, $entry;
+          map { " " x $self->{indent} . $_ } split /\n/, $entry;
     }
     return "[\n" . ( join qq[,\n], @entries ) . "\n]";
 }
