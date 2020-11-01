@@ -38,6 +38,22 @@ sub new {
     return $self;
 }
 
+# Internal encoders can't be cloned
+# so we basicaly create a new instance but inheriting
+# the settings (that may have been initialized from defaults)
+# and then, the constructor recreates encoders with those settings.
+# If you mutated the encoder underneath us, your mutations will be
+# lost.
+sub clone {
+    my ( $old, @args ) = @_;
+    my (%params) = ref $args[1] ? %{ $args[1] } : @args;
+    my (%config);
+    for ( keys %{$old} ) {
+        next if $_ =~ /^_/;
+        $config{$_} = exists $params{$_} ? $params{$_} : $old->{$_};
+    }
+    ( ref $self )->new( \%config );
+}
 sub encode { $_[0]->_encode_width( $_[1], $_[0]->{width} ) }
 
 sub _encode_array_width {
