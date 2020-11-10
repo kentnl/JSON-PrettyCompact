@@ -132,7 +132,9 @@ sub _encode_hash_width {
 
 sub _encode_width {
     my ( $self, $value, $width ) = @_;
-    return $self->{_variable_encoder}->encode($value) if not ref $value;
+    if ( not ref $value or 'JSON::PP::Boolean' eq ref $value ) {
+        return $self->{_variable_encoder}->encode($value);
+    }
     my $test_encoding = $self->{_encoder}->encode($value);
     return $test_encoding if $width >= length $test_encoding;
     return $self->_encode_hash_width( $value, $width )
